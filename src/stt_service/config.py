@@ -1,3 +1,9 @@
+# logging
+LOGGING_LEVEL = "WARNING" # DEBUG < INFO < WARNING < ERROR < CRITICAL, будет игнорировать все логи уровнем ниже
+WRITE_TO_FILE = False
+LOG_FILE_PATH = "log.log"
+LOG_FILE_MODE = "w" # w - перезаписать, a - добавить 
+
 # audio
 SAMPLE_RATE = 16000
 BLOCK_DURATION_MS = 100 # Длительность блока аудио для обработки (в миллисекундах)
@@ -17,10 +23,11 @@ SILERO_VAD_MODEL = 'silero_vad' # Модель для обработки тиш�
 SILERO_VAD_REPO = 'snakers4/silero-vad'
 VAD_PROCESS_INTERVAL_SEC = 0.01 # Интервал, через который проверяем буфер с помощью VAD
 VAD_PARAMETERS = dict(min_silence_duration_ms=1000, threshold=0.8)
-# threshold: Порог вероятности речи (чем выше, тем строже VAD)
+# threshold: Порог вероятности (чем выше, тем строже VAD)
 # min_silence_duration_ms: Минимальная длительность тишины для разделения сегментов 
 
-# silero TTS
+# silero TTS & warming up models
+WARMUP_ENABLE = True
 NUM_WARMUP_RUNS = 3
 TTS_NUM_SPEAKERS = 3
 TTS_SILERO_MODEL = 'silero_tts' 
