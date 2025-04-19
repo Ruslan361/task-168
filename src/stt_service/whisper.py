@@ -14,41 +14,54 @@ is_running = True
 whisper_model = None
 silero_vad_model = None
 get_speech_timestamps = None # Указатель на функцию VAD утилиты
-processed_audio_index = 0 # Индекс в буфере, до которого аудио уже было обработано VAD        
+processed_audio_index = 0 # Индекс в буфере, до которого аудио уже было обработано VAD
 
-try:
-    print("Загрузка модели Silero VAD...")
-    silero_vad_model, vad_utils = torch.hub.load(
-        repo_or_dir='snakers4/silero-vad',
-        model=cfg.SILERO_VAD_MODEL,
-        force_reload=False # Не перезагружать при каждом запуске
-    )
-    # Извлекаем нужную функцию для получения временных меток сегментов
-    (get_speech_timestamps, _, _, _, _) = vad_utils
-    silero_vad_model = silero_vad_model.to(cfg.DEVICE)
-    print(f"Модель Silero VAD '{cfg.SILERO_VAD_MODEL}' загружена на {cfg.DEVICE}.")
+def init_transcribe():
+    device_type = cfg.DEVICE
+    comp_type = cfg.COMPUTE_TYPE
 
-    print(f"Загрузка модели Whisper '{cfg.MODEL_SIZE}'...")
-    whisper_model = faster_whisper.WhisperModel(
-        cfg.MODEL_SIZE, 
-        device=cfg.DEVICE, 
-        compute_type=cfg.COMPUTE_TYPE, 
-        cpu_threads=cfg.CPU_THREADS, 
-        num_workers=cfg.NUM_WORKERS)
-    print(f"Модель Whisper '{cfg.MODEL_SIZE}' загружена на {cfg.DEVICE} ({cfg.COMPUTE_TYPE}).")
+    if cfg.DEVICE == "auto":
+        if torch.cuda.is_available():
+            device_type = "cuda:0"
+            comp_type = "float32"
+        else:
+            device_type = "cpu"
+            comp_type = "int8"
 
-    wp.warmup_models(whisper_model, silero_vad_model, get_speech_timestamps)
+    global whisper_model, silero_vad_model, get_speech_timestamps
 
-except Exception as e:
-    print(f"Ошибка на этапе загрузки или прогрева моделей: {e}")
-    sys.exit(1)
+    try:
+        print("Загрузка модели Silero VAD...")
+        silero_vad_model, vad_utils = torch.hub.load(
+            repo_or_dir=cfg.SILERO_VAD_REPO,
+            model=cfg.SILERO_VAD_MODEL,
+            force_reload=False # Не перезагружать при каждом запуске
+        )
+        # Извлекаем нужную функцию для получения временных меток сегментов
+        (get_speech_timestamps, _, _, _, _) = vad_utils
+        silero_vad_model = silero_vad_model.to(device_type)
+        print(f"Модель Silero VAD '{cfg.SILERO_VAD_MODEL}' загружена на {device_type}.")
+
+        print(f"Загрузка модели Whisper '{cfg.MODEL_SIZE}'...")
+        whisper_model = faster_whisper.WhisperModel(
+            cfg.MODEL_SIZE, 
+            device=device_type, 
+            compute_type=comp_type, 
+            cpu_threads=cfg.CPU_THREADS, 
+            num_workers=cfg.NUM_WORKERS)
+        print(f"Модель Whisper '{cfg.MODEL_SIZE}' загружена на {device_type} ({comp_type}).")
+
+        wp.warmup_models(whisper_model, silero_vad_model, get_speech_timestamps)
+
+    except Exception as e:
+        print(f"Ошибка на этапе загрузки или прогрева моделей: {e}")
+        sys.exit(1)
 
 def audio_callback(indata, frames, time, status):
     if status:
         print(status, file=sys.stderr)
     audio_queue.put(indata.copy())
 
-# --- Основная функция транскрипции ---
 def transcribe_audio():
 
     global is_running, processed_audio_index
@@ -177,5 +190,6 @@ def transcribe_audio():
         print("Аудиопоток остановлен.")
 
 if __name__ == "__main__":
+    init_transcribe()
     transcribe_audio()
     print("Программа завершена.")

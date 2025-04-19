@@ -6,8 +6,8 @@ def tts_init():
     try:
         print(f"Загрузка Silero TTS '{cfg.TTS_MODEL_VERSION}'...")
         silero_tts_model, _ = torch.hub.load(
-            repo_or_dir='snakers4/silero-models',
-            model='silero_tts',
+            repo_or_dir=cfg.TTS_SILERO_REPO,
+            model=cfg.TTS_SILERO_MODEL,
             language=cfg.LANGUAGE,
             speaker=cfg.TTS_MODEL_VERSION 
         )
