@@ -21,7 +21,7 @@ VAD_PARAMETERS = dict(min_silence_duration_ms=1000, threshold=0.8)
 
 # silero TTS
 NUM_WARMUP_RUNS = 3
-TTS_NUM_SPEAKERS = 1 
+TTS_NUM_SPEAKERS = 3 
 TTS_SPEAKER = "random" # см. документацию по silero  
 TTS_SAMPLE_RATE = 8000
 TTS_MODEL_VERSION = "v4_ru"   
