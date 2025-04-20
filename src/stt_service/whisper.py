@@ -4,58 +4,78 @@ import config as cfg
 import warmup as wp
 import numpy as np
 import datetime
+import logging
 import torch
 import queue
 import time
 import sys
 
 audio_queue = queue.Queue()
+
 is_running = True
 whisper_model = None
 silero_vad_model = None
 get_speech_timestamps = None # Указатель на функцию VAD утилиты
-processed_audio_index = 0 # Индекс в буфере, до которого аудио уже было обработано VAD        
+processed_audio_index = 0 # Индекс в буфере, до которого аудио уже было обработано VAD
 
-try:
-    print("Загрузка модели Silero VAD...")
-    silero_vad_model, vad_utils = torch.hub.load(
-        repo_or_dir='snakers4/silero-vad',
-        model=cfg.SILERO_VAD_MODEL,
-        force_reload=False # Не перезагружать при каждом запуске
-    )
-    # Извлекаем нужную функцию для получения временных меток сегментов
-    (get_speech_timestamps, _, _, _, _) = vad_utils
-    silero_vad_model = silero_vad_model.to(cfg.DEVICE)
-    print(f"Модель Silero VAD '{cfg.SILERO_VAD_MODEL}' загружена на {cfg.DEVICE}.")
+def init_transcribe():
+    logging.info("Инициализация моделей...")
 
-    print(f"Загрузка модели Whisper '{cfg.MODEL_SIZE}'...")
-    whisper_model = faster_whisper.WhisperModel(
-        cfg.MODEL_SIZE, 
-        device=cfg.DEVICE, 
-        compute_type=cfg.COMPUTE_TYPE, 
-        cpu_threads=cfg.CPU_THREADS, 
-        num_workers=cfg.NUM_WORKERS)
-    print(f"Модель Whisper '{cfg.MODEL_SIZE}' загружена на {cfg.DEVICE} ({cfg.COMPUTE_TYPE}).")
+    device_type = cfg.DEVICE
+    comp_type = cfg.COMPUTE_TYPE
 
-    wp.warmup_models(whisper_model, silero_vad_model, get_speech_timestamps)
+    if cfg.DEVICE == "auto":
+        if torch.cuda.is_available():
+            device_type = "cuda:0"
+            comp_type = "float32"
+        else:
+            device_type = "cpu"
+            comp_type = "int8"
 
-except Exception as e:
-    print(f"Ошибка на этапе загрузки или прогрева моделей: {e}")
-    sys.exit(1)
+    global whisper_model, silero_vad_model, get_speech_timestamps
+
+    try:
+        logging.debug("Загрузка модели Silero VAD...")
+        silero_vad_model, vad_utils = torch.hub.load(
+            repo_or_dir=cfg.SILERO_VAD_REPO,
+            model=cfg.SILERO_VAD_MODEL,
+            force_reload=False # Не перезагружать при каждом запуске
+        )
+        # Извлекаем нужную функцию для получения временных меток сегментов
+        (get_speech_timestamps, _, _, _, _) = vad_utils
+        silero_vad_model = silero_vad_model.to(device_type)
+        logging.debug(f"Модель Silero VAD '{cfg.SILERO_VAD_MODEL}' загружена на {device_type}.")
+
+        logging.debug(f"Загрузка модели Whisper '{cfg.MODEL_SIZE}'...")
+        whisper_model = faster_whisper.WhisperModel(
+            cfg.MODEL_SIZE, 
+            device=device_type, 
+            compute_type=comp_type, 
+            cpu_threads=cfg.CPU_THREADS, 
+            num_workers=cfg.NUM_WORKERS)
+        logging.debug(f"Модель Whisper '{cfg.MODEL_SIZE}' загружена на {device_type} ({comp_type}).")
+        logging.info("Инициализация завершена.") 
+
+        if cfg.WARMUP_ENABLE:  
+            wp.warmup_models(whisper_model, silero_vad_model, get_speech_timestamps)
+
+    except Exception as e:
+        logging.error(f"Ошибка на этапе загрузки или прогрева моделей: {e}.")
+        return False
+     
+    return True
 
 def audio_callback(indata, frames, time, status):
     if status:
-        print(status, file=sys.stderr)
+        logging.warning(status, file=sys.stderr)
     audio_queue.put(indata.copy())
 
-# --- Основная функция транскрипции ---
-def transcribe_audio():
+def transcribe_audio(publisher):
 
     global is_running, processed_audio_index
     accumulated_audio = np.array([], dtype=np.float32) # Буфер для накопления аудио
 
-    print(f"\nНачинаю слушать микрофон (частота: {cfg.SAMPLE_RATE} Гц)...")
-    print("Говорите по-русски. Нажмите Ctrl+C для остановки.")
+    logging.info(f"\nНачинаю слушать микрофон (частота: {cfg.SAMPLE_RATE} Гц)...")
 
     try:
         stream = sd.InputStream(
@@ -67,10 +87,10 @@ def transcribe_audio():
         )
         stream.start()
     except Exception as e:
-        print(f"Ошибка при открытии аудиопотока: {e}")
-        print("Убедитесь, что у вас выбран правильный микрофон по умолчанию и он работает.")
+        logging.error(f"Ошибка при открытии аудиопотока: {e}\n"+
+                      "Убедитесь, что у вас выбран правильный микрофон по умолчанию и он работает.")
         is_running = False
-        return
+        return False
 
     last_vad_process_time = time.time()
 
@@ -137,7 +157,7 @@ def transcribe_audio():
                                              full_text_this_cycle += s_seg.text + " "
 
                                 except Exception as whisper_e:
-                                    print(f"\nОшибка при транскрипции сегмента Whisper: {whisper_e}")
+                                    logging.warning(f"\nОшибка при транскрипции сегмента Whisper: {whisper_e}")
                                     # Продолжаем, чтобы не сломать весь цикл из-за одного сегмента
 
                         full_text_this_cycle = full_text_this_cycle.strip()
@@ -151,7 +171,7 @@ def transcribe_audio():
                            processed_audio_index = min(processed_audio_index + lookahead_samples, len(accumulated_audio))
 
                         if full_text_this_cycle:
-                            print(f"{timestamp_str} {full_text_this_cycle}")
+                            publisher.publish(timestamp_str + " " + full_text_this_cycle)
 
 
                 if processed_audio_index > 0:
@@ -165,17 +185,17 @@ def transcribe_audio():
             time.sleep(0.1)
             continue
         except KeyboardInterrupt:
-            print("\nОстановка по требованию пользователя (Ctrl+C)...")
+            logging.info("\nОстановка по требованию пользователя (Ctrl+C)...")
             is_running = False
+            return False
         except Exception as e:
-            print(f"\nПроизошла ошибка в цикле транскрипции: {e}")
+            logging.error(f"\nПроизошла ошибка в цикле транскрипции: {e}")
             is_running = False
+            return False
 
     if 'stream' in locals() and stream.active:
         stream.stop()
         stream.close()
-        print("Аудиопоток остановлен.")
+        logging.info("Аудиопоток остановлен.")
 
-if __name__ == "__main__":
-    transcribe_audio()
-    print("Программа завершена.")
+    return True
