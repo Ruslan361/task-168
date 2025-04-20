@@ -6,13 +6,14 @@ import queue
 import sys 
 
 class STTPublisher:
-    def __init__(self, max_batch_size=5):
+    def __init__(self, max_batch_size=2):
 
         if cfg.WRITE_TO_FILE:
             logging.basicConfig(level=cfg.LOGGING_LEVEL, 
                             format='%(asctime)s - %(levelname)s - %(message)s',
                             filename=cfg.LOG_FILE_PATH,
-                            filemode=cfg.LOG_FILE_MODE)
+                            filemode=cfg.LOG_FILE_MODE,
+                            encoding='utf-8')
         else:
             logging.basicConfig(level=cfg.LOGGING_LEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
 
