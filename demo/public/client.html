@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат Клиента</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Чат поддержки (Клиент)</h1>
+        <p style="display: flex; align-items: center; justify-content: space-between;">
+        <span class="client-info-left">
+            <span class="client-label">Ваш ID:</span>
+            <strong id="clientId">Ожидание...</strong>
+        </span>
+                <span class="call-controls"> <span class="icon-button call-icon" title="Начать звонок оператору">📞</span>
+            <span class="icon-button hangup-icon" title="Завершить звонок">❌</span>
+        </span>
+    </p>
+
+    <div id="incomingCallNotification" class="call-notification">
+        <p>Входящий звонок от оператора</p>
+        <button id="acceptCallButton">Принять</button>
+        <button id="declineCallButton">Отклонить</button>
+    </div>
+
+
+    <div id="chatbox">
+    </div>
+
+    <div id="input-area">
+        <input type="text" id="messageInput" placeholder="Введите ваше сообщение..." autocomplete="off">
+        <button id="sendButton">Отправить</button>
+    </div>
+
+    <script src="client.js"></script>
+</body>
+</html>

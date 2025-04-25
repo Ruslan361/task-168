@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Оператора</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Панель Оператора</h1>
+    <div id="incomingRequestUI" class="call-notification">
+        <p>Входящий запрос звонка от клиента: <strong id="incomingRequestClientInfo"></strong></p>
+        <button id="acceptRequestButton">Принять запрос</button>
+        <button id="declineRequestButton">Отклонить запрос</button>
+    </div>
+
+    <div class="main-container">
+        <div class="left-panel">
+            <div id="clientsList">
+                <strong>Активные клиенты:</strong>
+                <div class="client-info-line">
+                    <span id="activeClients"></span>
+                    
+                    <span class="icon-button call-icon" title="Начать звонок">📞</span>
+                    <span class="icon-button hangup-icon" title="Завершить звонок">❌</span>
+                </div>
+            </div>
+
+            <div id="chatbox">
+            </div>
+
+            <div id="replyArea">
+                <input type="text" id="messageInput" placeholder="Введите ответ..." autocomplete="off">
+                <button id="sendButton">Отправить</button>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <h2>Предполагаемый ответ (AI)<span id="loadingIndicator" class="loading-indicator">⚙️</span></h2>
+            <div class="client-info-summary">
+                <p><strong>Намерение клиента:</strong> <span id="clientIntent">Ожидание данных...</span></p>
+                <p><strong>Эмоция клиента:</strong> <span id="clientEmotion">Ожидание данных...</span></p>
+            </div>
+            <textarea id="aiSuggestionArea" rows="10" placeholder="AI ответ появится здесь..." readonly></textarea>
+        </div>
+    </div>
+
+    <script src="operator.js"></script>
+</body>
+</html>

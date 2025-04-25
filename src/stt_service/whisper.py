@@ -18,6 +18,8 @@ silero_vad_model = None
 get_speech_timestamps = None # Указатель на функцию VAD утилиты
 processed_audio_index = 0 # Индекс в буфере, до которого аудио уже было обработано VAD
 
+_stt_device = None
+
 def init_transcribe():
     logging.info("Инициализация моделей...")
 
@@ -26,13 +28,14 @@ def init_transcribe():
 
     if cfg.DEVICE == "auto":
         if torch.cuda.is_available():
-            device_type = "cuda:0"
+            device_type = "cuda"
             comp_type = "float32"
         else:
             device_type = "cpu"
             comp_type = "int8"
 
-    global whisper_model, silero_vad_model, get_speech_timestamps
+    global whisper_model, silero_vad_model, get_speech_timestamps, _stt_device
+    _stt_device = device_type
 
     try:
         logging.debug("Загрузка модели Silero VAD...")
@@ -72,7 +75,7 @@ def audio_callback(indata, frames, time, status):
 
 def transcribe_audio(publisher):
 
-    global is_running, processed_audio_index
+    global is_running, processed_audio_index, _stt_device
     accumulated_audio = np.array([], dtype=np.float32) # Буфер для накопления аудио
 
     logging.info(f"\nНачинаю слушать микрофон (частота: {cfg.SAMPLE_RATE} Гц)...")
@@ -114,6 +117,7 @@ def transcribe_audio(publisher):
 
                 if chunk_duration > 0: 
                     audio_tensor_chunk = torch.from_numpy(current_chunk_for_vad).unsqueeze(0)
+                    audio_tensor_chunk = audio_tensor_chunk.to(_stt_device)
 
                     # Используем Silero VAD для поиска сегментов в текущем чанке
                     with torch.no_grad(): 
@@ -142,7 +146,7 @@ def transcribe_audio(publisher):
                             segment_audio = accumulated_audio[start_sample_abs:end_sample_abs]
 
                             if len(segment_audio) > 0:
-                                # Транскрибируем ТОЛЬКО этот сегмент с помощью Whisper
+
                                 try:
                                     segment_segments_whisper, segment_info = whisper_model.transcribe(
                                         segment_audio,
@@ -158,31 +162,32 @@ def transcribe_audio(publisher):
 
                                 except Exception as whisper_e:
                                     logging.warning(f"\nОшибка при транскрипции сегмента Whisper: {whisper_e}")
-                                    # Продолжаем, чтобы не сломать весь цикл из-за одного сегмента
+
 
                         full_text_this_cycle = full_text_this_cycle.strip()
 
-                        # Передвигаем указатель на конец последнего найденного в этом чанке сегмента
-                        if timestamps: 
-                           last_segment_end_in_chunk = timestamps[-1]['end'] 
-                           processed_audio_index += last_segment_end_in_chunk 
+                        max_index_in_chunk_relative_to_its_start = 0
+                        if timestamps:
+                            max_index_in_chunk_relative_to_its_start = timestamps[-1]['end'] 
 
-                           lookahead_samples = int(cfg.SAMPLE_RATE * 0.1) 
-                           processed_audio_index = min(processed_audio_index + lookahead_samples, len(accumulated_audio))
+                        samples_processed_in_chunk = max_index_in_chunk_relative_to_its_start
+
+                        lookahead_samples = int(cfg.SAMPLE_RATE * cfg.VAD_PROCESS_INTERVAL_SEC * 0.5)
+                        samples_processed_in_chunk += lookahead_samples
+
+                        processed_audio_index = samples_processed_in_chunk
 
                         if full_text_this_cycle:
-                            publisher.publish(timestamp_str + " " + full_text_this_cycle)
+                             publisher.publish(timestamp_str + " " + full_text_this_cycle)
 
+                        if processed_audio_index > 0:
+                             accumulated_audio = accumulated_audio[processed_audio_index:]
+                             processed_audio_index = 0
 
-                if processed_audio_index > 0:
-                    accumulated_audio = accumulated_audio[processed_audio_index:]
-                    processed_audio_index = 0
-                    # print(f"Буфер очищен на {processed_audio_index} сэмплов. Осталось {len(accumulated_audio)} сэмплов.")
-
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         except queue.Empty:
-            time.sleep(0.1)
+            time.sleep(0.01)
             continue
         except KeyboardInterrupt:
             logging.info("\nОстановка по требованию пользователя (Ctrl+C)...")

@@ -1,0 +1,531 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #f2f2f7;
+    color: #1c1c1e;
+}
+
+h1 {
+    text-align: center;
+    color: #000;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 2em;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+h2 {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #2c2c2e;
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5ea;
+}
+
+/* --- Стили, специфичные для СТРАНИЦЫ ОПЕРАТОРА --- */
+
+.main-container {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    gap: 10px;
+}
+
+.left-panel,
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+}
+
+#clientsList {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e5e5ea;
+    flex-shrink: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #2c2c2e;
+}
+
+#clientsList span {
+    display: inline-block;
+    background: #e5e5ea;
+    color: #48484a;
+    padding: 4px 8px;
+    margin: 4px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: 400;
+}
+
+#clientsList strong {
+    color: #1c1c1e;
+}
+
+#clientsList .client-info-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+#clientsList .icon-button.hangup-icon {
+    /* Используем базовые стили .icon-button */
+    color: #dc3545; /* Красный цвет для завершения */
+    /* По умолчанию скрываем, пока звонок не активен */
+    display: none;
+}
+
+#clientsList .icon-button {
+    cursor: pointer;
+    font-size: 1.1em;
+    color: #007aff;
+    transition: opacity 0.2s ease-in-out;
+    padding: 2px;
+}
+
+#clientsList .icon-button:hover {
+    opacity: 0.7;
+}
+
+#clientsList #activeClients {
+    margin: 0;
+}
+
+#replyArea {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #e5e5ea;
+    flex-shrink: 0;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+#replyArea input[type="text"] {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border: 1px solid #d1d1d6;
+    border-radius: 8px;
+    outline: none;
+    font-size: 1em;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+}
+
+#replyArea input[type="text"]:focus {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    background-color: #fff;
+}
+
+#replyArea button {
+    padding: 12px 20px;
+    border: none;
+    background-color: #007aff;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    font-size: 1em;
+    font-weight: 600;
+    flex-shrink: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+#replyArea button:hover {
+    background-color: #005ecb;
+}
+
+#replyArea button:active {
+     opacity: 0.8;
+}
+
+.right-panel h2 {
+    margin-top: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #2c2c2e;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5ea;
+}
+
+.right-panel p {
+    margin-top: 1px;
+    margin-bottom: 1px;
+}
+
+#aiSuggestionArea {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 150px;
+    padding: 12px 15px;
+    border: 1px solid #d1d1d6;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1em;
+    line-height: 1.5;
+    color: #1c1c1e;
+    background-color: #f9f9f9;
+    outline: none;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    flex-grow: 1;
+}
+
+#aiSuggestionArea:focus {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    background-color: #fff;
+}
+
+/* --- Стили для ОБЕИХ страниц (чатбокс и сообщения) --- */
+
+/* Основной контейнер чата */
+#chatbox {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border: 1px solid #e5e5ea;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    /* Добавлено для лучшего управления выравниванием сообщений */
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* Контейнер каждого сообщения (теперь это flex-контейнер внутри #chatbox) */
+#chatbox p.message-bubble {
+    margin: 5px 0; /* Уменьшаем вертикальный отступ между сообщениями */
+    padding: 0; /* Убираем padding с p, он будет на .message-content */
+    border-radius: 0; /* Убираем border-radius с p, он будет на .message-content */
+    word-wrap: break-word;
+    line-height: 1.5;
+
+    display: flex; /* Включаем Flexbox для размещения времени и содержимого */
+    align-items: flex-end; /* Выравниваем элементы по нижней линии */
+    gap: 8px; /* Пространство между меткой времени и содержимым */
+
+    max-width: 95%; /* Ограничиваем ширину */
+    /* align-self будет установлен на .message-bubble для выравнивания влево/вправо */
+}
+
+/* Стили для метки времени (отдельный "пузырек") */
+#chatbox p.message-bubble .timestamp {
+    font-size: 0.7em;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.3); /* Полупрозрачный темный фон */
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-weight: normal;
+    flex-shrink: 0;
+    align-self: flex-end; /* Прижат к низу в flex контейнере */
+    line-height: 1.2;
+}
+
+/* Контейнер для имени отправителя и текста сообщения */
+#chatbox p.message-bubble .message-content {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border-radius: 8px;
+    word-wrap: break-word;
+    line-height: 1.5;
+    /* Фоны и цвета текста будут установлены специфичными классами на .message-content */
+}
+
+/* Контейнер имени отправителя */
+#chatbox p.message-bubble .sender-name {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* Контейнер текста сообщения */
+#chatbox p.message-bubble .message-text {
+    display: block;
+}
+
+/* Переопределяем стили для разных типов сообщений, применяем к .message-bubble и .message-content */
+
+/* Стили для сообщений КЛИЕНТА (Исходящие для клиента, входящие для оператора) */
+#chatbox p.client-message {
+    align-self: flex-start; /* Выравниваем весь блок сообщения влево */
+    min-width: 40%;
+}
+#chatbox p.client-message .message-content {
+    background-color: #e9e9eb; /* Светло-серый фон */
+    color: #000; /* Черный текст */
+}
+#chatbox p.client-message .sender-name strong {
+    color: #007aff; /* Синее имя отправителя */
+}
+
+/* Стили для сообщений ОПЕРАТОРА (Исходящие для оператора, входящие для клиента) */
+#chatbox p.operator-reply { /* Исправлено: используем operator-reply, а не operator-message */
+    align-self: flex-end; /* Выравниваем весь блок сообщения вправо */
+    /* Для operator-reply меняем порядок элементов, чтобы время было справа */
+    flex-direction: row-reverse;
+    width: 40%;
+}
+#chatbox p.operator-reply .message-content {
+    background-color: #007aff; /* Apple Blue фон */
+    color: #fff; /* Белый текст */
+    text-align: left; /* Текст внутри пузыря оператора стандартно влево */
+}
+#chatbox p.operator-reply .sender-name strong {
+    color: #fff; /* Белое имя отправителя на синем фоне */
+}
+/* Если нужно, чтобы текст оператора выравнивался по правому краю внутри пузыря */
+/*
+#chatbox p.operator-reply .message-content {
+    text-align: right;
+}
+#chatbox p.operator-reply .message-text {
+     text-align: right;
+}
+*/
+
+
+/* Стили для системных сообщений */
+#chatbox p.system-message message-bubble {
+    align-self: center; /* Выравниваем весь блок по центру */
+    text-align: center; /* Выравниваем текст внутри пузыря по центру */
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+#chatbox p.system-message .message-content {
+    background-color: #ffda63;
+    color: #1c1c1e;
+    border-left: 3px solid #ffb300;
+    font-style: italic;
+}
+#chatbox p.system-message .sender-name {
+    margin-bottom: 0;
+}
+
+
+/* Дополнительные стили для ссылок в чате */
+#chatbox p a {
+    color: #007aff;
+    text-decoration: underline;
+}
+
+#chatbox p a:hover {
+    text-decoration: none;
+    color: #005ecb;
+}
+
+/* --- Стили, специфичные для СТРАНИЦЫ КЛИЕНТА --- */
+
+/* Область ввода сообщения клиента */
+#input-area {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid #e5e5ea;
+    flex-shrink: 0;
+}
+
+/* Поле ввода сообщения клиента */
+#input-area #messageInput {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border: 1px solid #d1d1d6;
+    border-radius: 8px;
+    outline: none;
+    font-size: 1em;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    box-sizing: border-box;
+    background-color: #fff;
+    border-radius: 8px; /* Единый радиус */
+}
+
+#input-area #messageInput:focus {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    background-color: #fff;
+}
+
+/* Кнопка отправки сообщения клиента */
+#input-area #sendButton {
+    padding: 12px 20px;
+    border: none;
+    background-color: #007aff;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px; /* Единый радиус */
+    transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    font-size: 1em;
+    font-weight: 600;
+    flex-shrink: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: 8px;
+}
+
+#input-area #sendButton:hover {
+    background-color: #005ecb;
+}
+#input-area #sendButton:active {
+    opacity: 0.8;
+}
+
+/* Стиль для ID клиента на клиентской странице */
+#clientId {
+    font-weight: 600;
+    color: #007aff;
+}
+
+.client-id-line .icon-button {
+    cursor: pointer;
+    font-size: 1.1em;
+    color: #007aff;
+    transition: opacity 0.2s ease-in-out;
+    padding: 3px;
+    background-color: white;
+    border-radius: 5px;
+    float: right;
+}
+
+.call-notification {
+    display: none; /* Скрываем по умолчанию */
+    position: fixed; /* Или absolute, в зависимости от желаемого расположения */
+    top: 20px; /* Отступ сверху */
+    left: 50%;
+    transform: translateX(-50%); /* Центрируем по горизонтали */
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* Поверх других элементов */
+    text-align: center;
+}
+
+.call-notification p {
+    margin-top: 0;
+    font-weight: bold;
+    color: #333;
+}
+
+.call-notification button {
+    margin: 0 5px;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.call-notification #acceptCallButton {
+    background-color: #28a745; /* Зеленый */
+    color: white;
+}
+
+.call-notification #acceptCallButton:hover {
+    background-color: #218838;
+}
+
+.call-notification #declineCallButton {
+    background-color: #dc3545; /* Красный */
+    color: white;
+}
+
+.call-notification #declineCallButton:hover {
+    background-color: #c82333;
+}
+
+.client-id-line .icon-button:hover {
+    opacity: 0.7;
+}
+
+.call-controls {
+    display: flex; /* Flexbox для расположения кнопок в ряд */
+    align-items: center;
+    gap: 8px; /* Пространство между кнопками */
+    flex-shrink: 0; /* Не сжиматься */
+}
+
+
+/* Стиль для кликабельной иконки звонка на странице КЛИЕНТА (с границей) */
+/* Заменяет старый стиль .client-id-line .icon-button.call-icon */
+.call-controls .icon-button.call-icon {
+    font-size: 1.1em;
+    color: #007aff;
+    border: 1px solid #007aff;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background-color: #fff;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    /* По умолчанию показываем, пока звонок не активен */
+    /* display: inline-flex; */
+}
+
+/* Специфичный стиль для иконки завершения звонка (Клиент) */
+.call-controls .icon-button.hangup-icon {
+    font-size: 1.1em;
+    color: #dc3545; /* Красный цвет */
+    border: 1px solid #dc3545; /* Красная граница */
+    padding: 6px 8px;
+    border-radius: 6px;
+    background-color: #fff;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    /* По умолчанию скрываем, пока звонок не активен */
+    display: none;
+}
+
+.loading-indicator {
+    display: none; /* По умолчанию скрыт */
+    margin-left: 10px;
+    font-size: 1em;
+    color: #007bff; /* Цвет индикатора */
+    /* Простая анимация вращения (пример) */
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Пример стилей для заголовка, чтобы разместить индикатор рядом */
+.right-panel h2 {
+    display: flex; /* Используем flexbox для выравнивания элементов в заголовке */
+    align-items: center; /* Выравниваем по центру по вертикали */
+}
+
+
+/* --- Вспомогательные/Неиспользуемые стили --- */
+.reply-btn { display: none; }
+/* ... (остальная часть вспомогательных стилей) ... */

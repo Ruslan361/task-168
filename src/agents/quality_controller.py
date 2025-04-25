@@ -20,7 +20,7 @@ class QualityControllerAgent(BaseMwsAgent):
 
         def execution():
             emotion = shared_context.get('emotion', 'нейтральная').lower()
-            user_answer = shared_context.get('user_answer', '') # User answer provided for comparison
+            user_answer = shared_context.get('question', '') # User answer provided for comparison
             reference_answer = shared_context.get('reference_answer', '')
             summary = shared_context.get('summary', '') # Summary might be useful context for QA
             # discount_details = shared_context.get('discount_details', '') # Use boolean flags instead

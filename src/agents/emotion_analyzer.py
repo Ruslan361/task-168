@@ -39,6 +39,7 @@ class EmotionAnalyzerAgent(BaseMwsAgent):
                 {"role": "user", "content": f"Запрос: {actual_query}"}
             ])
             shared_context['emotion'] = emotion # Update shared context
+            shared_context['question'] = actual_query
             return emotion
 
         return self._log_and_measure_time(query, execution)

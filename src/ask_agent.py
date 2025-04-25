@@ -11,7 +11,14 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExpor
 trace_provider = TracerProvider()
 trace_provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
 
+import sys
+import codecs
 
+# Настраиваем стандартные потоки для работы с UTF-8
+sys.stdin = codecs.getreader('utf-8')(sys.stdin.buffer)
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer)
+sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer)
+import json
 import time
 import logging
 # Import CrewAI components
@@ -40,38 +47,47 @@ def ask_all_agents():
     # Configure logging to save logs to a file
     log_file = "app.log"
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.CRITICAL,
         format='%(asctime)s - %(levelname)s - %(message)s',
+        encoding='utf-8',
+        stream=sys.stderr,
         handlers=[
             logging.FileHandler(log_file, mode='a', encoding='utf-8'),
             logging.StreamHandler()
         ]
     )
 
-    logging.info("Логирование настроено. Логи будут сохраняться в файл app.log")
+    #logging.info("Логирование настроено. Логи будут сохраняться в файл app.log")
 
     # --- 1. Initialize SemanticSearch --- (Keep as is)
     try:
-        print("Инициализация SemanticSearch...")
+        #print("Инициализация SemanticSearch...")
         semantic_search_engine = SemanticSearch.with_api_provider(api_key=API_KEY)
-        print("Загрузка индекса SemanticSearch...")
+        #print("Загрузка индекса SemanticSearch...")
         semantic_search_engine.load_index(
-            df_path="data/faiss_index/corpus.csv",
-            index_path="data/faiss_index/faiss.index",
+            df_path="../data/faiss_index/corpus.csv",
+            index_path="../data/faiss_index/faiss.index",
             text_column="name"
         )
-        print("SemanticSearch инициализирован и индекс загружен.")
+        #print("SemanticSearch инициализирован и индекс загружен.")
     except Exception as e:
-        logging.error(f"Ошибка при инициализации SemanticSearch: {e}")
-        print(f"Ошибка при инициализации SemanticSearch: {e}")
+        #logging.error(f"Ошибка при инициализации SemanticSearch: {e}")
+        #print(f"Ошибка при инициализации SemanticSearch: {e}")
         return
 
     # --- 2. Define the Question --- (Keep as is)
-    question = input("Введите ваш вопрос: ")
-    print(f"Вопрос к агентам: {question}")
+
+    # Парсим JSON строку
+
+    # Теперь request_data - это Python словарь, содержащий данные от Node.js,
+    # например: {'clientId': '...', 'text': 'Как оплатить тариф?'}
+
+    # Получаем текст запроса из словаря
+    question = input()
+    #print(f"Вопрос к агентам: {question}")
 
     # --- 3. Define Agents and Shared Context ---
-    print("Создание агентов...")
+    #print("Создание агентов...")
     shared_context = {} # Initialize shared context
     agent_times = {} # To store execution times
 
@@ -114,7 +130,7 @@ def ask_all_agents():
     ), shared_context)
 
     # --- 4. Define Tasks --- (Similar to tum.py)
-    print("Определение задач...")
+    #print("Определение задач...")
     tasks = [
         Task(
             description=f"Клиент обратился в поддержку.\nПоследний запрос клиента: \"{question}\"\nОцени эмоциональное состояние клиента.",
@@ -149,7 +165,7 @@ def ask_all_agents():
     ]
 
     # --- 5. Create and Run Crew --- (Similar to tum.py)
-    print("Создание и запуск Crew...")
+    #print("Создание и запуск Crew...")
     crew = Crew(
         agents=[emotion_agent, intent_agent, knowledge_agent, action_agent, summary_agent, qa_agent],
         tasks=tasks,
@@ -172,27 +188,38 @@ def ask_all_agents():
         total_time = total_end_time - total_start_time
 
         # Log search results if they were captured
-        if 'search_results' in shared_context:
-            logging.info(f"Результаты поиска по запросу '{question}': {shared_context['search_results']}")
-            print(f"Результаты поиска по запросу '{question}' записаны в лог")
+        #if 'search_results' in shared_context:
+        #    logging.info(f"Результаты поиска по запросу '{question}': {shared_context['search_results']}")
 
-        print(f"\n=== Результаты обработки запроса '{question}' ===")
-        print(f"Намерение: {shared_context.get('intent', 'N/A')}")
-        print(f"Эмоция: {shared_context.get('emotion', 'N/A')}")
-        print(f"Эталонный ответ: {shared_context.get('reference_answer', 'N/A')}")
-        print(f"Рекомендации для оператора: {shared_context.get('action', 'N/A')}")
-        # 'user_answer' is not applicable here as it was for comparison in tum.py
-        print(f"Резюме: {shared_context.get('summary', 'N/A')}")
-        print(f"Контроль качества: {shared_context.get('qa', 'N/A')}")
-        # Add other context items if needed, e.g., discount, alternative service
-        print(f"Скидка предложена: {'Да' if shared_context.get('discount_offered', False) else 'Нет'}")
-        print(f"Детали скидки: {shared_context.get('discount_details', 'N/A')}")
-        print(f"Альтернативный сервис: {shared_context.get('alternative_service', 'N/A')}")
+        #logging.info(f"Обработка запроса '{question}' завершена за {total_time:.2f} секунд.")
+        #logging.info(f"Результаты: {shared_context}")
 
-        print(f"\nОбщее время обработки: {total_time:.2f} секунд")
-        logging.info(f"Обработка запроса '{question}' завершена за {total_time:.2f} секунд.")
-        logging.info(f"Результаты: {shared_context}")
-        
+        results_data = {
+            "question": question, # Исходный запрос
+            "intent": shared_context.get('intent', 'N/A'),
+            "emotion": shared_context.get('emotion', 'N/A'),
+            "reference_answer": shared_context.get('reference_answer', 'N/A'),
+            "action": shared_context.get('action', 'N/A'),
+            "summary": shared_context.get('summary', 'N/A'),
+            "qa": shared_context.get('qa', 'N/A'),
+            "discount_offered": shared_context.get('discount_offered', False),
+            "discount_details": shared_context.get('discount_details', 'N/A'),
+            "alternative_service": shared_context.get('alternative_service', 'N/A'),
+            "total_processing_time": total_time 
+        }
+
+        try:
+    
+            json_output = json.dumps(results_data, ensure_ascii=True) # ensure_ascii=False для поддержки кириллицы
+
+            print(json_output)
+            sys.stdout.flush() # Важно: сбрасываем буфер вывода сразу
+
+            #logging.info(f"Результаты обработки запроса '{question}' отправлены в stdout как JSON.")
+            #logging.info(f"Отправленные JSON данные: {json_output}")
+
+        except Exception as e:
+            logging.error(f"Ошибка при сериализации или отправке JSON в stdout: {e}")
 
     except Exception as e:
         logging.error(f"Ошибка при выполнении Crew: {e}")

@@ -1,23 +1,67 @@
-## Project Quick Start with Make
+## Установка и запуск
 
-Ensure you have the following installed:
-[`Python 3.x`](https://www.python.org/)
-[`GNU Make`](https://www.gnu.org/software/make/).
+Следуйте этим шагам, чтобы настроить и запустить проект локально.
 
-### Basic Usage
+1. **Создайте виртуальное окружение:**
+   Это рекомендуется для изоляции зависимостейпроекта.
+    ```bash
+    python -m venv venv
+    ```
 
-Open your terminal in the project root directory and use these commands:
+2. **Активируйте виртуальное окружение:**
 
-* `make setup`
-    * Sets up the project: creates a virtual environment (`.venv`), installs dependencies from `requirements.txt`, and
-      prepares the `.env` file from `.env.example` (if `.env` doesn't exist). **Remember to edit `.env` afterwards!**
+    * **Windows (cmd.exe):**
+      ```bash
+      venv\Scripts\activate
+      ```
+    * **Windows (PowerShell):**
+      ```powershell
+      .\venv\Scripts\Activate.ps1
+      ```
+      *(Может потребоваться разрешить выполнение
+      скриптов: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process`)*
+    * **macOS / Linux:**
+      ```bash
+      source venv/bin/activate
+      ```
 
-* `make run`
-    * Runs the main application (`main.py`) using the Python interpreter from the virtual environment.
+3. **Обновите `pip` (рекомендуется):**
+   Убедитесь, что вы используете последнюю версию менеджера пакетов `pip`.
+   ```bash
+   pip install --upgrade pip
+   ```
 
-* `make freeze`
-    * Updates the `requirements.txt` file with the currently installed packages and their versions from the virtual
-      environment.
+4. **Установите зависимости Python:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-* `make clean`
-    * Removes the virtual environment (`.venv`) and Python cache files (`__pycache__`, `.pyc`).
+5. **Перейдите в директорию `demo`:**
+   Серверная часть для демонстрации находится в этой папке.
+   ```bash
+   cd demo
+   ```
+
+6. **Установите зависимости Node.js:**
+   Для этого шага требуются установленные [Node.js](https://nodejs.org/) и менеджер пакетов `npm` (обычно
+   устанавливается вместе с Node.js).
+   ```bash
+   npm install
+   ```
+
+7. **Запустите демонстрационный сервер:**
+   ```bash
+   node server.js
+   ```
+   После этого сервер должен быть запущен и доступен по адресу `http://localhost:3000`.
+   
+   Клиенты подключаются по `localhost:3000/client`.
+
+   Операторы подключаются по `localhost:3000/operator`.
+
+## Авторы
+   - Максим Шляков
+   - Александр Зыков
+   - Руслан Махнёв
+   - Виталий Вавилов
+   - Андрей Черных
